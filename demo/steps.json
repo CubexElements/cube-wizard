@@ -2,16 +2,16 @@
   {
     "name": "Register",
     "icon": "icons:account-circle",
-    "contentUrl": "register.html"
+    "contentUrl": "/demo/content/register.html"
   },
   {
     "name": "More Info",
     "icon": "icons:assignment",
-    "contentUrl": "more.html"
+    "contentUrl": "/demo/content/more.html"
   },
   {
     "name": "Complete",
     "icon": "icons:shopping-cart",
-    "contentUrl": "complete.html"
+    "contentUrl": "/demo/content/complete.html"
   }
 ]
