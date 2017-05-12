@@ -1,0 +1,179 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../cube-list/cube-list-menu.html">
+<link rel="import" href="../cube-list/cube-li.html">
+<link rel="import" href="../cube-resource/cube-resource.html">
+<link rel="import" href="../cube-pagelet/cube-pagelet-content.html">
+
+<!--
+`cube-wizard`
+
+@demo demo/index.html
+-->
+
+<dom-module id="cube-wizard" attributes="steps-json horizontal">
+  <template>
+    <style>
+      :host {
+        display: block;
+        --cube-list-items-content-container: {
+          display: flex;
+          flex-direction: column;
+        };
+        --cube-li-active-color: transparent;
+        --cube-li-hover-color: transparent;
+        --cube-li-focus-color: transparent;
+      }
+
+      :host([horizontal]) {
+        --cube-list-items-content-container: {
+          display: flex;
+          flex-direction: row;
+        };
+      }
+
+      :host([horizontal]) .step-name {
+        display: none
+      }
+
+      :host([horizontal]) .step-wrapper {
+        text-align: center;
+        flex-grow: 1;
+        position: relative;
+      }
+
+      :host([horizontal]) .step-wrapper[current-step] cube-icon:hover,
+      :host([horizontal]) .step-wrapper cube-icon:hover {
+        background: green;
+      }
+
+      :host([horizontal]) .step-wrapper[current-step] cube-icon {
+        background: lightgreen;
+      }
+
+      :host(:not([horizontal])) .step-wrapper[current-step]:hover cube-icon,
+      :host(:not([horizontal])) .step-wrapper:hover cube-icon {
+        color: lightgreen;
+      }
+
+      :host(:not([horizontal])) .step-wrapper[current-step] cube-icon {
+        color: green;
+      }
+
+      :host([horizontal]) cube-icon {
+        position: relative;
+        text-align: center;
+        flex-grow: 1;
+        background: white;
+        border: 2px solid black;
+        border-radius: 1000px;
+      }
+
+      :host([horizontal]) .step-line {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+
+        height: 1px;
+        margin-top: -1px;
+
+        background: red;
+      }
+
+      :host([horizontal]) .step-wrapper:first-of-type .step-line {
+        left: 50%;
+      }
+
+      :host([horizontal]) .step-wrapper:last-of-type .step-line {
+        right: 50%;
+      }
+
+      #contentWrapper {
+        display: flex;
+        flex-direction: row;
+      }
+
+      :host([horizontal]) #contentWrapper {
+        flex-direction: column;
+      }
+
+      cube-li {
+        cursor: initial;
+      }
+
+      .step-item {
+        cursor: pointer;
+        display: inline-block;
+      }
+
+    </style>
+
+    <cube-resource auto url="[[stepsUrl]]" data="{{_steps}}"></cube-resource>
+    <cube-resource auto url="[[_step.contentUrl]]" data="{{_stepContent}}"></cube-resource>
+
+    <div id="contentWrapper">
+      <cube-list-menu id="wrapper">
+        <template is="dom-repeat" items="[[_steps]]">
+          <div class="step-wrapper" current-step$="[[_isCurrent(index,_currentStep)]]">
+            <cube-li>
+              <div class="step-line"></div>
+              <div class="step-item" on-tap="_switchStep" step$="[[index]]" title="[[item.name]]">
+                <cube-icon icon="[[item.icon]]"></cube-icon>
+                <span class="step-name">[[item.name]]</span>
+              </div>
+            </cube-li>
+          </div>
+        </template>
+      </cube-list-menu>
+
+      <div id="content">
+        <cube-pagelet-content html="[[_stepContent]]"></cube-pagelet-content>
+        <button on-tap="_nextStep">Next ></button>
+      </div>
+    </div>
+  </template>
+
+  <script>
+    Polymer(
+      {
+        is: 'cube-wizard',
+
+        properties: {
+          stepsUrl:     {type: String},
+          _steps:       {type: Array, value: function () {return [];}},
+          _currentStep: {type: Number, value: 0},
+          _step:        {type: Object, computed: '_computeStep(_currentStep,_steps)'},
+          _stepContent: {type: String},
+          horizontal:   {type: Boolean, value: false, reflectToAttribute: true}
+        },
+
+        _isCurrent:   function (step, currentStep)
+                      {
+                        return step.toString() === currentStep.toString();
+                      },
+        _computeStep: function (currentStep, steps)
+                      {
+                        return steps[currentStep];
+                      },
+
+        _nextStep: function ()
+                   {
+                     if(this._currentStep < this._steps.length - 1)
+                     {
+                       this._currentStep++;
+                     }
+                     else
+                     {
+                       alert('finished');
+                     }
+                   },
+
+        _switchStep: function (event)
+                     {
+                       this._currentStep = event.currentTarget.getAttribute('step');
+                     }
+
+      });
+  </script>
+</dom-module>

@@ -1,0 +1,17 @@
+[
+  {
+    "name": "Register",
+    "icon": "icons:account-circle",
+    "contentUrl": "register.html"
+  },
+  {
+    "name": "More Info",
+    "icon": "icons:assignment",
+    "contentUrl": "more.html"
+  },
+  {
+    "name": "Complete",
+    "icon": "icons:shopping-cart",
+    "contentUrl": "complete.html"
+  }
+]
