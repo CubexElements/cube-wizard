@@ -115,21 +115,29 @@
     <div id="contentWrapper">
       <cube-list-menu id="wrapper">
         <template is="dom-repeat" items="[[_steps]]">
-          <div class="step-wrapper" current-step$="[[_isCurrent(index,_currentStep)]]">
-            <cube-li>
-              <div class="step-line"></div>
-              <div class="step-item" on-tap="_switchStep" step$="[[index]]" title="[[item.name]]">
-                <cube-icon icon="[[item.icon]]"></cube-icon>
-                <span class="step-name">[[item.name]]</span>
-              </div>
-            </cube-li>
-          </div>
+          <template is="dom-if" if="[[!item.noMenu]]">
+            <div class="step-wrapper" current-step$="[[_isCurrent(index,_currentStep)]]">
+              <cube-li>
+                <div class="step-line"></div>
+                <div class="step-item" on-tap="_tapStep" step$="[[index]]" title="[[item.name]]">
+                  <cube-icon icon="[[item.icon]]"></cube-icon>
+                  <span class="step-name">[[item.name]]</span>
+                </div>
+              </cube-li>
+            </div>
+          </template>
         </template>
       </cube-list-menu>
 
       <div id="content">
-        <cube-pagelet-content html="[[_stepContent]]"></cube-pagelet-content>
-        <button on-tap="_nextStep">Next ></button>
+        <cube-pagelet-content id="stepPagelet" html="[[_stepContent]]"></cube-pagelet-content>
+        <!--<template is="dom-if" if="[[_stepForm]]">
+          <button type="reset" on-tap="_tapReset">Reset</button>
+        </template>-->
+        <template is="dom-if" if="[[_showSkip]]">
+          <button type="reset" on-tap="_tapSkip">Skip ></button>
+        </template>
+        <button on-tap="_tapNext">Next ></button>
       </div>
     </div>
   </template>
@@ -145,8 +153,32 @@
           _currentStep: {type: Number, value: 0},
           _step:        {type: Object, computed: '_computeStep(_currentStep,_steps)'},
           _stepContent: {type: String},
+          _stepForm:    {type: Object},
+          _showSkip:    {type: Boolean, computed: '_computeShowSkip(_step,_stepForm)'},
           horizontal:   {type: Boolean, value: false, reflectToAttribute: true}
         },
+
+        attached: function ()
+                  {
+                    var self = this;
+                    this.$.stepPagelet.addEventListener('cube-pagelet-content-ready', function ()
+                    {
+                      self._stepForm = this.querySelector('cube-form');
+                    });
+                    this.addEventListener('cube-form-response', function (e)
+                    {
+                      if(Object.keys(e.detail.Errors).length <= 0)
+                      {
+                        this._step.completed = true;
+                        self._nextStep();
+                      }
+                    });
+                  },
+
+        _computeShowSkip: function (step, form)
+                          {
+                            return step && (step.optional && form);
+                          },
 
         _isCurrent:   function (step, currentStep)
                       {
@@ -157,11 +189,46 @@
                         return steps[currentStep];
                       },
 
+        _tapReset: function ()
+                   {
+                     this._stepForm.reset();
+                   },
+
+        _tapSkip: function ()
+                  {
+                    // skip subsequent noMenu
+                    this._nextStep();
+                  },
+        _tapNext: function ()
+                  {
+                    this._leaveStep();
+                    if(this._stepForm)
+                    {
+                      this._stepForm.submit();
+                    }
+                    else
+                    {
+                      this._nextStep();
+                    }
+                  },
+        _tapStep: function (event)
+                  {
+                    this._moveToStep(event.currentTarget.getAttribute('step'));
+                  },
+
+        _leaveStep: function ()
+                    {
+                      if(this._stepForm)
+                      {
+                        this._stepForm.submit();
+                      }
+                    },
+
         _nextStep: function ()
                    {
                      if(this._currentStep < this._steps.length - 1)
                      {
-                       this._currentStep++;
+                       this._moveToStep(this._currentStep + 1);
                      }
                      else
                      {
@@ -169,9 +236,24 @@
                      }
                    },
 
-        _switchStep: function (event)
+        _moveToStep: function (step)
                      {
-                       this._currentStep = event.currentTarget.getAttribute('step');
+                       // check that we can access that step
+                       // go through each previous steps, ensure that `completed` or `optional` are true
+                       for(var i = 0; i < step; i++)
+                       {
+                         if(!(this._steps[i].completed || this._steps[i].optional))
+                         {
+                           console.error(
+                             'Cannot progress to that step. You must complete this step first.',
+                             this._steps, step,
+                             this._steps[i]
+                           );
+                           this._currentStep = i;
+                           return;
+                         }
+                       }
+                       this._currentStep = step;
                      }
 
       });

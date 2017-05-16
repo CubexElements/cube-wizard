@@ -2,16 +2,26 @@
   {
     "name": "Register",
     "icon": "icons:account-circle",
-    "contentUrl": "/demo/content/register.html"
+    "contentUrl": "/demo/content/register.html",
+    "optional": false
   },
   {
     "name": "More Info",
     "icon": "icons:assignment",
-    "contentUrl": "/demo/content/more.html"
+    "contentUrl": "/demo/content/more-info.html",
+    "optional": true
+  },
+  {
+    "name": "More Info",
+    "icon": "icons:assignment",
+    "contentUrl": "/demo/content/more.html",
+    "optional": true,
+    "noMenu": true
   },
   {
     "name": "Complete",
     "icon": "icons:shopping-cart",
-    "contentUrl": "/demo/content/complete.html"
+    "contentUrl": "/demo/content/complete.html",
+    "optional": false
   }
 ]
