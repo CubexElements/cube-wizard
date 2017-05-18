@@ -8,15 +8,8 @@
   {
     "name": "More Info",
     "icon": "icons:assignment",
-    "contentUrl": "/demo/content/more-info.html",
+    "contentUrl": "/demo/content/more-wizard.html",
     "optional": true
-  },
-  {
-    "name": "More Info",
-    "icon": "icons:assignment",
-    "contentUrl": "/demo/content/more.html",
-    "optional": true,
-    "noMenu": true
   },
   {
     "name": "Complete",

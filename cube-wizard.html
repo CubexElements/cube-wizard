@@ -10,7 +10,7 @@
 @demo demo/index.html
 -->
 
-<dom-module id="cube-wizard" attributes="steps-json horizontal">
+<dom-module id="cube-wizard" attributes="steps-url horizontal">
   <template>
     <style>
       :host {
@@ -89,6 +89,10 @@
         right: 50%;
       }
 
+      #content {
+        width: 100%;
+      }
+
       #contentWrapper {
         display: flex;
         flex-direction: row;
@@ -115,17 +119,15 @@
     <div id="contentWrapper">
       <cube-list-menu id="wrapper">
         <template is="dom-repeat" items="[[_steps]]">
-          <template is="dom-if" if="[[!item.noMenu]]">
-            <div class="step-wrapper" current-step$="[[_isCurrent(index,_currentStep)]]">
-              <cube-li>
-                <div class="step-line"></div>
-                <div class="step-item" on-tap="_tapStep" step$="[[index]]" title="[[item.name]]">
-                  <cube-icon icon="[[item.icon]]"></cube-icon>
-                  <span class="step-name">[[item.name]]</span>
-                </div>
-              </cube-li>
-            </div>
-          </template>
+          <div class="step-wrapper" current-step$="[[_isCurrent(index,_currentStep)]]">
+            <cube-li>
+              <div class="step-line"></div>
+              <div class="step-item" on-tap="_tapStep" step$="[[index]]" title="[[item.name]]">
+                <cube-icon icon="[[item.icon]]"></cube-icon>
+                <span class="step-name">[[item.name]]</span>
+              </div>
+            </cube-li>
+          </div>
         </template>
       </cube-list-menu>
 
@@ -137,7 +139,9 @@
         <template is="dom-if" if="[[_showSkip]]">
           <button type="reset" on-tap="_tapSkip">Skip ></button>
         </template>
-        <button on-tap="_tapNext">Next ></button>
+        <template is="dom-if" if="[[_showNext]]">
+          <button on-tap="_tapNext">Next ></button>
+        </template>
       </div>
     </div>
   </template>
@@ -148,46 +152,72 @@
         is: 'cube-wizard',
 
         properties: {
-          stepsUrl:     {type: String},
-          _steps:       {type: Array, value: function () {return [];}},
-          _currentStep: {type: Number, value: 0},
-          _step:        {type: Object, computed: '_computeStep(_currentStep,_steps)'},
-          _stepContent: {type: String},
-          _stepForm:    {type: Object},
-          _showSkip:    {type: Boolean, computed: '_computeShowSkip(_step,_stepForm)'},
-          horizontal:   {type: Boolean, value: false, reflectToAttribute: true}
+          stepsUrl:      {type: String},
+          _steps:        {type: Array, value: function () {return [];}},
+          _currentStep:  {type: Number, value: 0},
+          _step:         {type: Object, computed: '_computeStep(_steps,_currentStep)'},
+          _stepContent:  {type: String},
+          _stepForm:     {type: Object},
+          _showSkip:     {type: Boolean, computed: '_computeShowSkip(_step,_childWizard,_stepForm)'},
+          _showNext:     {
+            type:     Boolean,
+            computed: '_computeShowNext(_step,_childWizard,_steps,_currentStep,_parentWizard)'
+          },
+          _parentWizard: {type: Object},
+          _childWizard:  {type: Object},
+          horizontal:    {type: Boolean, value: false, reflectToAttribute: true}
         },
 
         attached: function ()
                   {
                     var self = this;
-                    this.$.stepPagelet.addEventListener('cube-pagelet-content-ready', function ()
+
+                    var node = this;
+                    while(node = (node.parentNode && (node.parentNode.nodeType === Node.DOCUMENT_FRAGMENT_NODE) ? node.parentNode.host : node.parentNode))
                     {
+                      if(node.tagName === 'CUBE-WIZARD')
+                      {
+                        this._parentWizard = node;
+                        break;
+                      }
+                    }
+
+                    this.$.stepPagelet.addEventListener('cube-pagelet-content-ready', function (e)
+                    {
+                      e.stopPropagation();
                       self._stepForm = this.querySelector('cube-form');
+                      self._childWizard = this.querySelector('cube-wizard');
                     });
                     this.addEventListener('cube-form-response', function (e)
                     {
+                      e.stopPropagation();
                       if(Object.keys(e.detail.Errors).length <= 0)
                       {
-                        this._step.completed = true;
+                        self._step.completed = true;
                         self._nextStep();
                       }
                     });
                   },
 
-        _computeShowSkip: function (step, form)
+        _computeShowSkip: function (step, childWizard, form)
                           {
-                            return step && (step.optional && form);
+                            return step && (!childWizard) && (step.optional && form);
                           },
 
-        _isCurrent:   function (step, currentStep)
-                      {
-                        return step.toString() === currentStep.toString();
-                      },
-        _computeStep: function (currentStep, steps)
+        _computeShowNext: function (step, childWizard, steps, currentStep, parentWizard)
+                          {
+                            return step && (!childWizard) && (steps[currentStep + 1] || parentWizard);
+                          },
+
+        _computeStep: function (steps, currentStep)
                       {
                         return steps[currentStep];
                       },
+
+        _isCurrent: function (step, currentStep)
+                    {
+                      return step.toString() === currentStep.toString();
+                    },
 
         _tapReset: function ()
                    {
@@ -196,12 +226,17 @@
 
         _tapSkip: function ()
                   {
-                    // skip subsequent noMenu
                     this._nextStep();
                   },
         _tapNext: function ()
                   {
-                    this._leaveStep();
+                    // if has child, pass events over
+                    if(this._childWizard)
+                    {
+                      this._childWizard._tapNext();
+                      return;
+                    }
+
                     if(this._stepForm)
                     {
                       this._stepForm.submit();
@@ -230,9 +265,13 @@
                      {
                        this._moveToStep(this._currentStep + 1);
                      }
+                     else if(this._parentWizard)
+                     {
+                       this._parentWizard._nextStep();
+                     }
                      else
                      {
-                       alert('finished');
+                       this.fire('cube-wizard-finished');
                      }
                    },
 
@@ -244,16 +283,12 @@
                        {
                          if(!(this._steps[i].completed || this._steps[i].optional))
                          {
-                           console.error(
-                             'Cannot progress to that step. You must complete this step first.',
-                             this._steps, step,
-                             this._steps[i]
-                           );
+                           console.error('Cannot progress to that step. You must complete this step first.');
                            this._currentStep = i;
                            return;
                          }
                        }
-                       this._currentStep = step;
+                       this._currentStep = parseInt(step);
                      }
 
       });
