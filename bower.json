@@ -4,6 +4,7 @@
   "dependencies": {
     "polymer": "Polymer/polymer#1.9 - 2",
     "iron-menu-behavior": "PolymerElements/iron-menu-behavior#1.9 - 2",
+    "cube-meta": "CubexElements/cube-meta",
     "cube-pagelet": "CubexElements/cube-pagelet",
     "cube-resource": "CubexElements/cube-resource",
     "cube-icon": "CubexElements/cube-icon",
@@ -13,6 +14,7 @@
     "iron-component-page": "PolymerElements/iron-component-page#1.9 - 2",
     "iron-demo-helpers": "PolymerElements/iron-demo-helpers#1.9 - 2",
     "web-component-tester": "^6.0.0",
-    "cube-form": "CubexElements/cube-form"
+    "cube-form": "CubexElements/cube-form",
+    "cube-input": "CubexElements/cube-input"
   }
 }
